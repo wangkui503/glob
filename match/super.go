@@ -9,19 +9,16 @@ import (
 type Super struct {
 	Raw        string
 	Separators []rune
+	Sensitive  bool
 }
 
 func NewSuper(raw string, sep []rune) Super {
-	return Super{raw, sep}
+	return Super{raw, sep, strings.IndexAnyRunes(raw, sep) > 0}
 }
 
 func (self Super) Match(s string) bool {
-	if strings.IndexAnyRunes(self.Raw, self.Separators) > 0 {
-		if s == "" || self.Raw[len(self.Raw)-1] == s[len(s)-1] {
-			return true
-		} else {
-			return false
-		}
+	if self.Sensitive && len(s) > 0 && self.Raw[len(self.Raw)-1] != s[len(s)-1] {
+		return false
 	}
 	return true
 }
