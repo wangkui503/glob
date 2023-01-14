@@ -3,8 +3,9 @@ package lexer
 import (
 	"bytes"
 	"fmt"
-	"github.com/gobwas/glob/util/runes"
 	"unicode/utf8"
+
+	"github.com/gobwas/glob/util/runes"
 )
 
 const (
@@ -64,12 +65,14 @@ type lexer struct {
 	lastRune     rune
 	lastRuneSize int
 	hasRune      bool
+	sep          []rune
 }
 
-func NewLexer(source string) *lexer {
+func NewLexer(source string, sep []rune) *lexer {
 	l := &lexer{
 		data:   source,
 		tokens: tokens(make([]Token, 0, 4)),
+		sep:    sep,
 	}
 	return l
 }
@@ -174,13 +177,21 @@ func (l *lexer) fetchItem() {
 		l.tokens.push(Token{Single, string(r)})
 
 	case r == char_any:
-		if l.read() == char_any {
-			l.tokens.push(Token{Super, string(r) + string(r)})
-		} else {
+		if l.read() != char_any {
 			l.unread()
 			l.tokens.push(Token{Any, string(r)})
+		} else {
+			raw := string(r) + string(r)
+			for {
+				if s := l.read(); runes.IndexRune(l.sep, s) < 0 {
+					l.unread()
+					break
+				} else {
+					raw += string(s)
+				}
+			}
+			l.tokens.push(Token{Super, raw})
 		}
-
 	default:
 		l.unread()
 

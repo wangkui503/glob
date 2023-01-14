@@ -12,12 +12,12 @@ import (
 	"github.com/gobwas/glob/util/runes"
 )
 
-func optimizeMatcher(matcher match.Matcher) match.Matcher {
+func optimizeMatcher(matcher match.Matcher, sep []rune) match.Matcher {
 	switch m := matcher.(type) {
 
 	case match.Any:
 		if len(m.Separators) == 0 {
-			return match.NewSuper()
+			return match.NewSuper("*", sep)
 		}
 
 	case match.AnyOf:
@@ -35,8 +35,8 @@ func optimizeMatcher(matcher match.Matcher) match.Matcher {
 		return m
 
 	case match.BTree:
-		m.Left = optimizeMatcher(m.Left)
-		m.Right = optimizeMatcher(m.Right)
+		m.Left = optimizeMatcher(m.Left, sep)
+		m.Right = optimizeMatcher(m.Right, sep)
 
 		r, ok := m.Value.(match.Text)
 		if !ok {
@@ -63,9 +63,9 @@ func optimizeMatcher(matcher match.Matcher) match.Matcher {
 		case leftSuper && rightSuper:
 			return match.NewContains(r.Str, false)
 
-		case leftSuper && rightNil:
-			return match.NewSuffix(r.Str)
-
+		/* case leftSuper && rightNil:
+		return match.NewSuffix(r.Str)
+		*/
 		case rightSuper && leftNil:
 			return match.NewPrefix(r.Str)
 
@@ -181,6 +181,7 @@ func glueMatchersAsEvery(matchers []match.Matcher) match.Matcher {
 	var (
 		hasAny    bool
 		hasSuper  bool
+		theSuper  match.Matcher
 		hasSingle bool
 		min       int
 		separator []rune
@@ -197,7 +198,7 @@ func glueMatchersAsEvery(matchers []match.Matcher) match.Matcher {
 		case match.Any:
 			sep = m.Separators
 			hasAny = true
-
+			theSuper = matcher
 		case match.Single:
 			sep = m.Separators
 			hasSingle = true
@@ -228,7 +229,7 @@ func glueMatchersAsEvery(matchers []match.Matcher) match.Matcher {
 	}
 
 	if hasSuper && !hasAny && !hasSingle {
-		return match.NewSuper()
+		return theSuper
 	}
 
 	if hasAny && !hasSuper && !hasSingle {
@@ -453,7 +454,7 @@ func compileTreeChildren(tree *ast.Node, sep []rune) ([]match.Matcher, error) {
 		if err != nil {
 			return nil, err
 		}
-		matchers = append(matchers, optimizeMatcher(m))
+		matchers = append(matchers, optimizeMatcher(m, sep))
 	}
 	return matchers, nil
 }
@@ -488,7 +489,8 @@ func compile(tree *ast.Node, sep []rune) (m match.Matcher, err error) {
 		m = match.NewAny(sep)
 
 	case ast.KindSuper:
-		m = match.NewSuper()
+		t := tree.Value.(ast.Text)
+		m = match.NewSuper(t.Text, sep)
 
 	case ast.KindSingle:
 		m = match.NewSingle(sep)
@@ -512,7 +514,7 @@ func compile(tree *ast.Node, sep []rune) (m match.Matcher, err error) {
 		return nil, fmt.Errorf("could not compile tree: unknown node type")
 	}
 
-	return optimizeMatcher(m), nil
+	return optimizeMatcher(m, sep), nil
 }
 
 func Compile(tree *ast.Node, sep []rune) (match.Matcher, error) {
