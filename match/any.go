@@ -26,6 +26,8 @@ func (self Any) Match(s string) bool {
 		} else {
 			return true
 		}
+	} else if (self.PrefixSep || gostrings.HasPrefix(self.Raw, string(0))) && gostrings.HasPrefix(s, ".") {
+		return false
 	}
 	return strings.IndexAnyRunes(s, self.Separators) == -1
 }
@@ -34,7 +36,7 @@ func (self Any) Index(s string) (int, []int) {
 	if len(s) < 1 {
 		return -1, nil
 	}
-	if self.PrefixSep && gostrings.HasPrefix(s, ".") {
+	if (self.PrefixSep || gostrings.HasPrefix(self.Raw, string(0))) && gostrings.HasPrefix(s, ".") {
 		return -1, nil
 	}
 	found := strings.IndexAnyRunes(s, self.Separators)
