@@ -3,8 +3,9 @@ package ast
 import (
 	"errors"
 	"fmt"
-	"github.com/gobwas/glob/syntax/lexer"
 	"unicode/utf8"
+
+	"github.com/gobwas/glob/syntax/lexer"
 )
 
 type Lexer interface {
@@ -47,11 +48,11 @@ func parserMain(tree *Node, lex Lexer) (parseFn, *Node, error) {
 			return parserMain, tree, nil
 
 		case lexer.Any:
-			Insert(tree, NewNode(KindAny, nil))
+			Insert(tree, NewNode(KindAny, Text{token.Raw}))
 			return parserMain, tree, nil
 
 		case lexer.Super:
-			Insert(tree, NewNode(KindSuper, nil))
+			Insert(tree, NewNode(KindSuper, Text{token.Raw}))
 			return parserMain, tree, nil
 
 		case lexer.Single:

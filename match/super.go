@@ -2,6 +2,7 @@ package match
 
 import (
 	"fmt"
+	gostrings "strings"
 
 	"github.com/gobwas/glob/util/strings"
 )
@@ -10,14 +11,16 @@ type Super struct {
 	Raw        string
 	Separators []rune
 	Sensitive  bool
+	PrefixSep  bool
 }
 
 func NewSuper(raw string, sep []rune) Super {
-	return Super{raw, sep, strings.IndexAnyRunes(raw, sep) > 0}
+	return Super{raw, sep, strings.IndexAnyRunes(raw, sep) > 0, (gostrings.HasPrefix(raw, "/") || gostrings.HasPrefix(raw, string(0)))}
 }
 
 func (self Super) Match(s string) bool {
-	if self.Sensitive && len(s) > 0 && self.Raw[len(self.Raw)-1] != s[len(s)-1] {
+	if self.Sensitive && len(s) > 0 && self.Raw[len(self.Raw)-1] != s[len(s)-1] ||
+		self.PrefixSep && gostrings.HasPrefix(s, ".") || gostrings.Contains(s, "/.") {
 		return false
 	}
 	return true
@@ -28,6 +31,9 @@ func (self Super) Len() int {
 }
 
 func (self Super) Index(s string) (int, []int) {
+	if self.PrefixSep && gostrings.HasPrefix(s, ".") || gostrings.Contains(s, "/.") {
+		return -1, nil
+	}
 	segments := acquireSegments(len(s) + 1)
 	for i := range s {
 		segments = append(segments, i)

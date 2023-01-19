@@ -66,6 +66,7 @@ type lexer struct {
 	lastRuneSize int
 	hasRune      bool
 	sep          []rune
+	prior        rune
 }
 
 func NewLexer(source string, sep []rune) *lexer {
@@ -110,6 +111,7 @@ func (l *lexer) read() rune {
 		l.seek(l.lastRuneSize)
 		return l.lastRune
 	}
+	l.prior = l.lastRune
 
 	r, s := l.peek()
 	l.seek(s)
@@ -177,11 +179,12 @@ func (l *lexer) fetchItem() {
 		l.tokens.push(Token{Single, string(r)})
 
 	case r == char_any:
+		raw := string(l.prior) + string(r)
 		if l.read() != char_any {
 			l.unread()
-			l.tokens.push(Token{Any, string(r)})
+			l.tokens.push(Token{Any, raw})
 		} else {
-			raw := string(r) + string(r)
+			raw += string(char_any)
 			for {
 				if s := l.read(); runes.IndexRune(l.sep, s) < 0 {
 					l.unread()

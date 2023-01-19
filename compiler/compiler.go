@@ -52,34 +52,34 @@ func optimizeMatcher(matcher match.Matcher, sep []rune) match.Matcher {
 		}
 
 		_, leftSuper := m.Left.(match.Super)
-		lp, leftPrefix := m.Left.(match.Prefix)
-		la, leftAny := m.Left.(match.Any)
+		_, leftPrefix := m.Left.(match.Prefix)
+		_, leftAny := m.Left.(match.Any)
 
 		_, rightSuper := m.Right.(match.Super)
-		rs, rightSuffix := m.Right.(match.Suffix)
-		ra, rightAny := m.Right.(match.Any)
+		_, rightSuffix := m.Right.(match.Suffix)
+		_, rightAny := m.Right.(match.Any)
 
 		switch {
 		case leftSuper && rightSuper:
-			return match.NewContains(r.Str, false)
+			//return match.NewContains(r.Str, false)
 
 		/* case leftSuper && rightNil:
 		return match.NewSuffix(r.Str)
 		*/
 		case rightSuper && leftNil:
-			return match.NewPrefix(r.Str)
+			//return match.NewPrefix(r.Str)
 
 		case leftNil && rightSuffix:
-			return match.NewPrefixSuffix(r.Str, rs.Suffix)
+			//return match.NewPrefixSuffix(r.Str, rs.Suffix)
 
 		case rightNil && leftPrefix:
-			return match.NewPrefixSuffix(lp.Prefix, r.Str)
+			//return match.NewPrefixSuffix(lp.Prefix, r.Str)
 
 		case rightNil && leftAny:
-			return match.NewSuffixAny(r.Str, la.Separators)
+			//return match.NewSuffixAny(r.Str, la.Separators)
 
 		case leftNil && rightAny:
-			return match.NewPrefixAny(r.Str, ra.Separators)
+			//return match.NewPrefixAny(r.Str, ra.Separators)
 		}
 
 		return m
@@ -185,6 +185,7 @@ func glueMatchersAsEvery(matchers []match.Matcher) match.Matcher {
 		hasSingle bool
 		min       int
 		separator []rune
+		raw       string
 	)
 
 	for i, matcher := range matchers {
@@ -199,6 +200,7 @@ func glueMatchersAsEvery(matchers []match.Matcher) match.Matcher {
 			sep = m.Separators
 			hasAny = true
 			theSuper = matcher
+			raw = m.Raw
 		case match.Single:
 			sep = m.Separators
 			hasSingle = true
@@ -233,7 +235,7 @@ func glueMatchersAsEvery(matchers []match.Matcher) match.Matcher {
 	}
 
 	if hasAny && !hasSuper && !hasSingle {
-		return match.NewAny(separator)
+		return match.NewAny(raw, separator)
 	}
 
 	if (hasAny || hasSuper) && min > 0 && len(separator) == 0 {
@@ -486,7 +488,8 @@ func compile(tree *ast.Node, sep []rune) (m match.Matcher, err error) {
 		}
 
 	case ast.KindAny:
-		m = match.NewAny(sep)
+		t := tree.Value.(ast.Text)
+		m = match.NewAny(t.Text, sep)
 
 	case ast.KindSuper:
 		t := tree.Value.(ast.Text)
