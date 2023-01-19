@@ -10,21 +10,30 @@ import (
 type Any struct {
 	Raw        string
 	Separators []rune
+	SuffixSep  bool
 	PrefixSep  bool
 }
 
 func NewAny(raw string, s []rune) Any {
-	return Any{raw, s, (strings.IndexAnyRunes(raw, s) == 0 || gostrings.HasPrefix(raw, string(0)))}
+	return Any{raw, s, strings.LastIndexAnyRunes(raw, s) == len(raw)-1, strings.IndexAnyRunes(raw, s) == 0}
 }
 
 func (self Any) Match(s string) bool {
-	if self.PrefixSep && gostrings.HasPrefix(s, ".") {
-		return false
+	if len(s) < 1 {
+		if self.SuffixSep && gostrings.HasPrefix(self.Raw, string(0)) ||
+			self.PrefixSep && gostrings.HasSuffix(self.Raw, string(0)) {
+			return false
+		} else {
+			return true
+		}
 	}
 	return strings.IndexAnyRunes(s, self.Separators) == -1
 }
 
 func (self Any) Index(s string) (int, []int) {
+	if len(s) < 1 {
+		return -1, nil
+	}
 	if self.PrefixSep && gostrings.HasPrefix(s, ".") {
 		return -1, nil
 	}
