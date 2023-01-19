@@ -10,7 +10,7 @@ import (
 type Super struct {
 	Raw        string
 	Separators []rune
-	Sensitive  bool
+	SuffixSep  bool
 	PrefixSep  bool
 }
 
@@ -21,8 +21,9 @@ func NewSuper(raw string, sep []rune) Super {
 func (self Super) Match(s string) bool {
 	hasSep := strings.IndexAnyRunes(s, self.Separators)
 	hasDot := strings.IndexAnyRunes(s, []rune("."))
-	if self.Sensitive && len(s) > 0 && self.Raw[len(self.Raw)-1] != s[len(s)-1] ||
-		self.PrefixSep && gostrings.HasPrefix(s, ".") || (hasSep >= 0 && hasSep+1 == hasDot) {
+	if self.SuffixSep && len(s) > 0 && self.Raw[len(self.Raw)-1] != s[len(s)-1] ||
+		self.PrefixSep && gostrings.HasPrefix(s, ".") ||
+		(hasSep >= 0 && hasSep+1 == hasDot) {
 		return false
 	}
 	return true
@@ -35,7 +36,9 @@ func (self Super) Len() int {
 func (self Super) Index(s string) (int, []int) {
 	hasSep := strings.IndexAnyRunes(s, self.Separators)
 	hasDot := strings.IndexAnyRunes(s, []rune("."))
-	if self.PrefixSep && gostrings.HasPrefix(s, ".") || (hasSep >= 0 && hasSep+1 == hasDot) {
+	if self.SuffixSep && len(s) > 0 && self.Raw[len(self.Raw)-1] != s[len(s)-1] ||
+		self.PrefixSep && gostrings.HasPrefix(s, ".") ||
+		(hasSep >= 0 && hasSep+1 == hasDot) {
 		return -1, nil
 	}
 	segments := acquireSegments(len(s) + 1)
