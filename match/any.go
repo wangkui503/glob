@@ -14,7 +14,7 @@ type Any struct {
 }
 
 func NewAny(raw string, s []rune) Any {
-	return Any{raw, s, (gostrings.HasPrefix(raw, "/") || gostrings.HasPrefix(raw, string(0)))}
+	return Any{raw, s, (strings.IndexAnyRunes(raw, s) == 0 || gostrings.HasPrefix(raw, string(0)))}
 }
 
 func (self Any) Match(s string) bool {
