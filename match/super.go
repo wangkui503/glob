@@ -15,7 +15,7 @@ type Super struct {
 }
 
 func NewSuper(raw string, sep []rune) Super {
-	return Super{raw, sep, strings.IndexAnyRunes(raw, sep) > 0, (strings.IndexAnyRunes(raw, sep) == 0 || gostrings.HasPrefix(raw, string(0)))}
+	return Super{raw, sep, strings.LastIndexAnyRunes(raw, sep) == len(raw)-1, (strings.IndexAnyRunes(raw, sep) == 0 || gostrings.HasPrefix(raw, string(0)))}
 }
 
 func (self Super) containsSepDot(s string) (yes bool) {

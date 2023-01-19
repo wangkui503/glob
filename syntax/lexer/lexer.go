@@ -180,7 +180,8 @@ func (l *lexer) fetchItem() {
 
 	case r == char_any:
 		raw := string(l.prior) + string(r)
-		if l.read() != char_any {
+		if s := l.read(); s != char_any {
+			raw += string(s)
 			l.unread()
 			l.tokens.push(Token{Any, raw})
 		} else {
