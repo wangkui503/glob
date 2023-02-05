@@ -3,6 +3,7 @@ package glob
 import (
 	"github.com/gobwas/glob/compiler"
 	"github.com/gobwas/glob/syntax"
+	"github.com/gobwas/glob/syntax/ast"
 )
 
 // Glob represents compiled glob pattern.
@@ -37,9 +38,12 @@ type Glob interface {
 //                    comma-separated (without spaces) patterns
 //
 func Compile(pattern string, separators ...rune) (Glob, error) {
-	ast, err := syntax.Parse(pattern)
+	ast, err := syntax.Parse(pattern, separators)
 	if err != nil {
 		return nil, err
+	}
+	if !hasKind(ast) {
+		return nil, nil
 	}
 
 	matcher, err := compiler.Compile(ast, separators)
@@ -48,6 +52,30 @@ func Compile(pattern string, separators ...rune) (Glob, error) {
 	}
 
 	return matcher, nil
+}
+
+func IsGlob(name string, separators ...rune) (bool, error) {
+	node, err := syntax.Parse(name, separators)
+	if err != nil {
+		return false, err
+	}
+	return hasKind(node), nil
+}
+
+func hasKind(node *ast.Node) bool {
+	/* if node == nil {
+		return false
+	} */
+	switch node.Kind {
+	case ast.KindList, ast.KindRange, ast.KindAny, ast.KindSuper, ast.KindSingle, ast.KindAnyOf:
+		return true
+	}
+	for _, node = range node.Children {
+		if hasKind(node) {
+			return true
+		}
+	}
+	return false
 }
 
 // MustCompile is the same as Compile, except that if Compile returns error, this will panic
